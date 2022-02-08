@@ -1,4 +1,4 @@
-import { world, Player } from 'mojang-minecraft';
+import { world, Player, EntityQueryOptions, EntityQueryScoreOptions } from 'mojang-minecraft';
 import { ModalFormData, ActionFormData } from 'mojang-minecraft-ui';
 Object.prototype.forEach = function (callback) {
     for (const key in this) {
@@ -20,6 +20,9 @@ Object.assign(Player.prototype, {
         const returns = [];
         commands.forEach(command => returns.push(this.runCommand(command)));
         return returns;
+    },
+    getName: function () {
+        return (/"|\\/.test(this.nameTag)) ? this.nameTag = this.nameTag.replace(/"|\\/) : this.nameTag;
     },
     scoreAdd: function (objective, amount = 0) {
         try {
@@ -64,6 +67,38 @@ const stringFunctions = {
 Object.assign(Number.prototype, stringFunctions);
 Object.assign(String.prototype, stringFunctions);
 Object.assign(Array.prototype, stringFunctions);
+
+Array.prototype.delete = function (index) {
+    return this.filter(item => item === !this[index]);
+};
+Array.prototype.deleteIncludes = function (any) {
+    return this.filter(item => item === !any);
+};
+let joiningPlayers = [];
+let playerMap = new Map();
+world.events.playerJoin.subscribe(({ player }) => {
+    joiningPlayers.unshift(player);
+});
+world.events.playerLeave.subscribe(({ playerName }) => {
+    playerMap.delete(playerName);
+});
+
+world.events.tick.subscribe(({ currentTick }) => {
+    console.warn(joiningPlayers);
+    for (const player in joiningPlayers) {
+        try {
+            player.runCommand('testfor @s');
+            player.runCommand('say joined');
+            try { joiningPlayers = joiningPlayers.delete(player); } catch (error) { console.warn(error, error.stack); }
+        } catch { }
+    }
+    let players = [...world.getPlayers()].filter(player => !joiningPlayers.some(join => player.getName() === join));
+    if (players.length) {
+
+    }
+
+
+});
 world.events.beforeItemUse.subscribe(({ item, source }) => {
     try {
 
@@ -81,33 +116,41 @@ world.events.beforeItemUse.subscribe(({ item, source }) => {
 });
 const MainMenus = {
     teleprorts: (player) => new ActionFormData()
-    .title('§l§9Player GUI')
-    .button('§l§bSpawn')
-    .button('§l§gShop')
-    .button('§l§gShop')
-    .show(player)
-    .then(({ selection }) => {
-        try {
+        .title('§l§9Player GUI')
+        .button('§l§bSpawn')
+        .button('§l§gShop')
+        .show(player)
+        .then(({ selection }) => {
+            try {
 
-        } catch (error) {
-            console.warn(error, error.stack);
-        }
-    }),
-    moderatorMenu: (player) => new ActionFormData()
-    .title('§l§9Player GUI')
-    .button
-    .show(player)
-    .then(({ selection }) => {
-        try {
+            } catch (error) {
+                console.warn(error, error.stack);
+            }
+        }),
+    moderatorMenu: (player) => {
+        const modeMode = player.scoreTest('modMode', true);
+        new ActionFormData()
+            .title('§l§9Player GUI')
+            .button(`§l§2Moderator §7Mode: ${(modeMode) ? '§aON' : '§cOFF'}`)
+            .button('')
+            .button('§l§cBack')
+            .show(player)
+            .then(({ selection }) => {
+                try {
+                    [
+                        player.scoreSet('modMode', (modeMode) ? 0 : 1)
+                    ][selection];
+                    MainMenus.moderatorMenu();
+                } catch (error) {
+                    console.warn(error, error.stack);
+                }
+            });
+    },
+};
 
-        } catch (error) {
-            console.warn(error, error.stack);
-        }
-    }),
-}
 const secondaryMenuPopups = {
-    
-}
+
+};
 const GUIS = [
     (player) => new ActionFormData()
         .title('§l§9Player GUI')
