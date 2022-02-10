@@ -71,9 +71,9 @@ Object.assign(Array.prototype, stringFunctions);
 Array.prototype.delete = function (index) {
     return this.filter(item => item === !this[index]);
 };
-Array.prototype.deleteIncludes = function (any) {
-    return this.filter(item => item === !any);
-};
+// Array.prototype.deleteif = function (callback) {
+//     return this.filter(item => );
+// };
 let joiningPlayers = [];
 let playerMap = new Map();
 world.events.playerJoin.subscribe(({ player }) => {
@@ -89,13 +89,14 @@ world.events.tick.subscribe(({ currentTick }) => {
         try {
             player.runCommand('testfor @s');
             player.runCommand('say joined');
-            try { joiningPlayers = joiningPlayers.delete(player); } catch (error) { console.warn(error, error.stack); }
+            try { joiningPlayers = joiningPlayers.filter(join => join.getName() !== player.getName()) } catch (error) { console.warn(error, error.stack); }
         } catch { }
     }
     let players = [...world.getPlayers()].filter(player => !joiningPlayers.some(join => player.getName() === join));
-    if (players.length) {
+    console.warn(players.length)
+    // if (players.length) {
 
-    }
+    // }
 
 
 });
